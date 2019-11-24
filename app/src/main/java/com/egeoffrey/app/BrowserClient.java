@@ -4,14 +4,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 
-public class WebViewClientImpl extends WebViewClient {
+public class BrowserClient extends android.webkit.WebViewClient {
 
     private Activity activity = null;
 
-    public WebViewClientImpl(Activity activity) {
+    public BrowserClient(Activity activity) {
         this.activity = activity;
     }
 

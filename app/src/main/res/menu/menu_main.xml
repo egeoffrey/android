@@ -4,7 +4,6 @@
         android:id="@+id/getting_started"
         android:title="Getting Started" />
     <item
-        android:icon="@android:drawable/ic_menu_info_details"
         android:id="@+id/about"
         android:title="About" />
 </menu>
