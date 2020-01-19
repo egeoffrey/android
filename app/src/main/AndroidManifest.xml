@@ -23,13 +23,24 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".NotificationService"
+        <service android:name=".MessagingService"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <receiver android:name=".NotificationService"
+            android:exported="true"
+            android:enabled="true">
+            <intent-filter >
+                <action android:name="com.egeoffrey.NOTIFY" />
+                <action android:name="com.egeoffrey.IN_FOREGROUND" />
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification_icon" />

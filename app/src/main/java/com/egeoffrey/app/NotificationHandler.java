@@ -1,7 +1,6 @@
 package com.egeoffrey.app;
 
 import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -9,8 +8,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.text.Html;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
+
+import java.util.Calendar;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
@@ -20,8 +22,14 @@ public class NotificationHandler {
     private android.app.NotificationManager manager;
     private String channelId;
 
+    /** constructor */
+    public NotificationHandler() {
+    }
+
     /** initialize the class */
-    public NotificationHandler(Context c) {
+    public void init(Context c) {
+        if (context != null) return;
+        Log.i("XX", "INIT");
         context = c;
         notificationCounter = 0;
         channelId = "Default";
@@ -35,7 +43,9 @@ public class NotificationHandler {
     }
 
     /** create the notification */
-    public void notify(String title, String body) {
+    public void notify(String title, String body, Long timestamp) {
+        // make up the timestamp
+        if (timestamp == 0) timestamp = Calendar.getInstance().getTimeInMillis();
         // create intent
         Intent intent = new Intent(context, MainActivity.class);
         intent.setAction(Intent.ACTION_MAIN);
@@ -55,9 +65,11 @@ public class NotificationHandler {
                 .setLargeIcon(rawBitmap)
                 .setAutoCancel(true)
                 .setGroup("egeoffrey_notification_group")
-                .setContentIntent(pendingIntent);
+                .setContentIntent(pendingIntent)
+                .setWhen(timestamp);
         // notify
         notificationCounter++;
+        Log.i("XX", ""+notificationCounter);
         manager.notify(notificationCounter, builder.build());
         if (notificationCounter > 30) notificationCounter = 0;
     }

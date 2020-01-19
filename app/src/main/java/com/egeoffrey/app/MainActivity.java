@@ -1,6 +1,8 @@
 package com.egeoffrey.app;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Html;
@@ -21,16 +23,23 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
+
+/** Main App, when the app is run, onCreate() is called */
 public class MainActivity extends AppCompatActivity {
     private WebView browser = null;
     private String notificationToken = "Unknown";
-    public boolean inForeground = false;
 
     /** initialize the app */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // instantiate notification service
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("com.egeoffrey.NOTIFY");
+        intentFilter.addAction("com.egeoffrey.IN_FOREGROUND");
+        registerReceiver(new NotificationService(this), intentFilter);
 
         // setup toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -63,7 +72,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void setInForeground(boolean foreground) {
-        inForeground = foreground;
+        // tell the notification service about the new status
+        Intent intent = new Intent("com.egeoffrey.IN_FOREGROUND");
+        intent.putExtra("inForeground", foreground);
+        sendBroadcast(intent);
+        // tell the webapp about the change
         browser.evaluateJavascript("javascript: window.EGEOFFREY_IN_FOREGROUND="+foreground, null);
     }
 
@@ -118,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
                     "1) an eGeoffrey instance installed and running somewhere;<br>"+
                     "2) the eGeoffrey gateway reachable from the network this device is connected to;<br>"+
                     "3) valid credentials set up for your house on the gateway;<br>"+
-                    "4) the package 'egeoffrey-notification-mobile' installed in your eGeoffrey instance to receive notifications even when this app is in background;<br>"+
+                    "4) the package 'egeoffrey-notification-mobile' installed in your eGeoffrey instance to receive notifications;<br>"+
                     "5) the 'notification/mobile' module configured with the device token you can get from the 'About' menu item of this app;<br><br>"+
                     "Please visit <a href=\"https://www.egeoffrey.com\">https://www.egeoffrey.com</a> for more information.");
             return true;

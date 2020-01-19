@@ -29,7 +29,7 @@ class Gui extends Module {
         // managed configuration schema
         this.page_config_schema = 1
         this.chart_config_schema = 1
-        this.settings_config_schema = 1
+        this.settings_config_schema = 2
         this.menu_config_schema = 1
         this.users_config_schema = 1
         this.groups_config_schema = 1
@@ -39,11 +39,11 @@ class Gui extends Module {
         this.supported_rules_config_schema = 2
         this.supported_manifest_schema = 2
         // subscribe to required settings
-        this.add_configuration_listener("house", 1, true)
-        this.add_configuration_listener("gui/settings", "+", true)
-        this.add_configuration_listener("gui/charts", "+", true)
-        this.add_configuration_listener("gui/users", "+", true)
-        this.add_configuration_listener("gui/groups", "+", true)
+        this.add_configuration_listener("house", this.supported_house_config_schema, true)
+        this.add_configuration_listener("gui/settings", this.settings_config_schema, true)
+        this.add_configuration_listener("gui/charts", this.chart_config_schema, true)
+        this.add_configuration_listener("gui/users", this.users_config_schema, true)
+        this.add_configuration_listener("gui/groups", this.groups_config_schema, true)
         // objects of the current page
         this.page = null
         this.page_listener = null
@@ -56,8 +56,6 @@ class Gui extends Module {
         this.maps_loaded = false
         // scheduler's events
         this.scheduler_events = []
-        // check for updates after login
-        this.check_for_updates = true
         // flag set on when the user is logged in
         this.logged_in = false
     }
@@ -147,7 +145,7 @@ class Gui extends Module {
         else {
             this.waiting_for_page = true
             if (this.page_listener != null) this.remove_listener(this.page_listener)
-            this.page_listener = this.add_configuration_listener("gui/pages/"+page_id, "+")
+            this.page_listener = this.add_configuration_listener("gui/pages/"+page_id, this.page_config_schema)
         }
     }
 
@@ -173,15 +171,7 @@ class Gui extends Module {
         var user = this.users[this.username]
         if ("password" in user && user["password"] != this.password) this.logout()
         $("#user_icon").addClass("fa-"+user["icon"])
-        $("#user_fullname").html('<i class="fas fa-sign-out-alt"></i> '+user["fullname"])
-        $("#user_fullname").unbind().click(function(this_class) {
-            return function () {
-                // clear stored credentials
-                localStorage.clear()
-                // disconnect
-                this_class.logout()
-            };
-        }(this));
+        $("#user_fullname").html(user["fullname"])
     }
 
     // log out the user
@@ -356,24 +346,15 @@ class Gui extends Module {
             }, 1000);
         }
         else if (message.args == "gui/settings") {
-            if (message.config_schema != this.settings_config_schema) {
-                return false
-            }
-            if (! this.is_valid_configuration(["default_page"], message.get_data())) return false
+            if (! this.is_valid_configuration(["default_page", "check_for_updates"], message.get_data())) return false
             this.settings = message.get_data()
         }
         else if (message.args == "gui/users") {
-            if (message.config_schema != this.users_config_schema) {
-                return false
-            }
             this.users = message.get_data()
             // ensure the user is still authenticated
             this.is_authenticated()
         }
         else if (message.args == "gui/groups") {
-            if (message.config_schema != this.groups_config_schema) {
-                return false
-            }
             this.groups = message.get_data()
         }
         this.log_debug("Received configuration "+message.args)

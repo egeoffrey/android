@@ -16,3 +16,4 @@
 .cxx
 /app/release
 google-services.json
+app/src/main/assets/html/gui/env_custom.js

@@ -146,6 +146,17 @@ class Value extends Widget {
                     // add value and suffix
 					if (data.length == 1) {
 						var value = data[0]
+                        // normalize the value if needed
+                        if ("normalize" in session["widget"]) {
+                            var split = session["widget"]["normalize"].split("-")
+                            min = split[0]
+                            max = split[1]
+                            var range = max - min
+                            var corrected_start_value = data[0] - min
+                            var percentage = (corrected_start_value * 100) / range 
+                            value = Math.round(percentage)
+                        } 
+                        // set the value to the widget
 						var text_color = "black"
 						for (var color of ["success", "warning", "danger"]) {
 							if ("color_"+color in session["widget"]) {
@@ -166,7 +177,11 @@ class Value extends Widget {
 							}
 						}
 						$(tag).html('<span class="text-'+text_color+'">'+value+'</span>');
-						if ("unit" in sensor) $(tag+"_suffix").html('<span class="text-'+text_color+'">'+sensor["unit"]+'</span>');
+                        // set the unit
+                        var unit = null
+						if ("unit" in sensor) unit = sensor["unit"]
+                        if ("normalize" in session["widget"]) unit = "%"
+                        if (unit != null) $(tag+"_suffix").html('<span class="text-'+text_color+'">'+unit+'</span>');
 					}
 					else $(tag).html(data.length == 1 ? data[0] : "N/A");
                 }
@@ -256,29 +271,51 @@ class Value extends Widget {
                 else if (session["widget"]["widget"] == "input") {
                     var id = tag.replace("#","")
                     $(tag.replace("_value","_timestamp")).addClass("d-none")
-                    var html = '\
-                    <div class="input-group input-group">\
-                        <input style="text-align:center;" id="'+id+'_input" class="form-control input" type="text" value="">\
-                    </div>'
-                    $(tag).html(html)
-                    if (data.length == 1) $(tag+"_input").val(data[0])
-                    // if a number, add +/- buttons
-                    if ("format" in sensor && sensor["format"] != "string") {
-                        var decimals = sensor["format"] == "int" ? 0 : 1
-                        var steps = sensor["format"] == "int" ? 1 : 0.1
-                        $(tag+"_input").TouchSpin({
-                            min: -1000000000,
-                            max: 1000000000,
-                            step: steps,
-                            decimals: decimals,
-                            boostat: 5,
-                            maxboostedstep: 10,
-                        });
+                    // allowed values are set, draw a select input
+                    if ("allowed_values" in session["widget"]) {
+                        var html = '\
+                            <select id="'+id+'_input" class="form-control">\
+                            </select>\
+                        '
+                        $(tag).html(html)
+                        var options = session["widget"]["allowed_values"].split(",")
+                        $('#'+id+'_input').find('option').remove()
+                        $('#'+id+'_input').append($('<option>', { value: "", text: "" }));
+                        for (var value of options) {
+                            $('#'+id+'_input').append($('<option>', {
+                                value: value,
+                                text: value
+                            }));
+                        }
+                        if (data.length == 1) $(tag+"_input").val(data[0])
+                    }
+                    // otherwise draw a standard text input
+                    else {
+                        var html = '\
+                        <div class="input-group input-group">\
+                            <input style="text-align:center;" id="'+id+'_input" class="form-control input" type="text" value="">\
+                        </div>'
+                        $(tag).html(html)
+                        if (data.length == 1) $(tag+"_input").val(data[0])
+                        // if a number, add +/- buttons
+                        if ("format" in sensor && sensor["format"] != "string") {
+                            var decimals = sensor["format"] == "int" ? 0 : 1
+                            var steps = sensor["format"] == "int" ? 1 : 0.1
+                            $(tag+"_input").TouchSpin({
+                                min: -1000000000,
+                                max: 1000000000,
+                                step: steps,
+                                decimals: decimals,
+                                boostat: 5,
+                                maxboostedstep: 10,
+                            });
+                        }
                     }
                     // listen for changes
                     $(tag+"_input").unbind().change(function(tag, sensor_id) {
                         return function () {
                             var value = $(tag).val()
+                            if (value == null || value == "") return
                             gui.log_debug("Setting "+sensor_id+"="+value)
                             var message = new Message(gui)
                             message.recipient = "controller/hub"
@@ -288,6 +325,54 @@ class Value extends Widget {
                             gui.send(message)
                         };
                     }(tag+"_input", session["sensor_id"]));
+                }
+                // this is a slider
+                else if (session["widget"]["widget"] == "slider") {
+                    var id = tag.replace("#","")
+                    $(tag.replace("_value","_timestamp")).addClass("d-none")
+                    // add the slider
+                    $(tag).html('<input id="'+id+'_slider" type="text" name="" value="" />')
+                    // configure it
+                    var options = {
+                        skin: "round",
+                        grid: false,
+                        onFinish: function (data) {
+                            var value = data["from"]
+                            if (session["widget"]["show_percentage"]) {
+                                value = (value * (session["widget"]["max_value"] - session["widget"]["min_value"]) / 100) + session["widget"]["min_value"]
+                            }
+                            gui.log_debug("Setting "+session["sensor_id"]+"="+value)
+                            var message = new Message(gui)
+                            message.recipient = "controller/hub"
+                            message.command = "SET"
+                            message.args = session["sensor_id"]
+                            message.set("value", value)
+                            gui.send(message)
+                        },
+                    }
+                    // set the value
+                    if (data.length == 1) {
+                        // normalize to percentage if needed
+                        if (session["widget"]["show_percentage"]) {
+                            options["min"] = 0
+                            options["max"] = 100
+                            options["postfix"] = "%"
+                            var range = session["widget"]["max_value"] - session["widget"]["min_value"]
+                            var corrected_start_value = data[0] - session["widget"]["min_value"]
+                            var percentage = (corrected_start_value * 100) / range 
+                            options["from"] = percentage
+                            
+                        } 
+                        // just set the raw value
+                        else {
+                            if ("min_value" in session["widget"]) options["min"] = session["widget"]["min_value"]
+                            if ("max_value" in session["widget"]) options["max"] = session["widget"]["max_value"]
+                            if ("step" in session["widget"]) options["step"] = session["widget"]["step"]
+                            if ("unit" in sensor) options["postfix"] = sensor["unit"]
+                            options["from"] = data[0]
+                        }
+                    }
+                    $("#"+id+"_slider").ionRangeSlider(options);
                 }
             }
             // add timestamp
