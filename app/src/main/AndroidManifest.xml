@@ -4,6 +4,7 @@
     package="com.egeoffrey.app">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -23,23 +24,13 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".MessagingService"
+        <service android:name=".NotificationService"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
-        <receiver android:name=".NotificationService"
-            android:exported="true"
-            android:enabled="true">
-            <intent-filter >
-                <action android:name="com.egeoffrey.NOTIFY" />
-                <action android:name="com.egeoffrey.IN_FOREGROUND" />
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </receiver>
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

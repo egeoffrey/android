@@ -60,6 +60,15 @@ class Value extends Widget {
         else $(tag).html(gui.date.timestamp_difference(gui.date.now(), this.timestamp))
     }
     
+    // schedule to update the timestamp
+    schedule_update_timestamp() {
+        var this_class = this
+        this.timestamp_timer = setTimeout(function() {
+            this_class.update_timestamp()
+        }, 10000);
+        gui.timers.push(this.timestamp_timer)
+    }
+    
     // draw the widget's content
     draw() {
         // IDs Template: _color, _icon, _value, _value_suffix, _timestamp
@@ -162,15 +171,15 @@ class Value extends Widget {
 							if ("color_"+color in session["widget"]) {
 								var min, max
 								if (session["widget"]["color_"+color].includes("-")) {
-									var split = session["widget"]["color_"+color].split("-")
-									min = split[0]
-									max = split[1]
+                                    var match = session["widget"]["color_"+color].match(/^(-?[^-]+)-(-?[^-]+)$/)
+									min = match[1]
+									max = match[2]
 								}
 								else {
 									min = max = session["widget"]["color_"+color]
 								}
 								if (jQuery.isNumeric(min) && jQuery.isNumeric(max) && jQuery.isNumeric(value)) {
-									if (value > min && value <= max) text_color = color
+                                    if (min < value == value <= max) text_color = color
 								} else {
 									if (value == min) text_color = color
 								}
@@ -382,10 +391,7 @@ class Value extends Widget {
                 this.update_timestamp()
                 // periodically refresh the elapsed time
                 if (this.timestamp_timer != null) clearInterval(this.timestamp_timer)
-                var this_class = this
-                this.timestamp_timer = setInterval(function() {
-                    this_class.update_timestamp()
-                }, 10000);
+                this.schedule_update_timestamp()
             }
             // add icon
             else if (session["component"] == "icon") {

@@ -2,7 +2,6 @@ package com.egeoffrey.app;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Html;
@@ -28,6 +27,7 @@ import com.google.firebase.iid.InstanceIdResult;
 public class MainActivity extends AppCompatActivity {
     private WebView browser = null;
     private String notificationToken = "Unknown";
+    private NotificationService notificationService;
 
     /** initialize the app */
     @Override
@@ -35,11 +35,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // instantiate notification service
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("com.egeoffrey.NOTIFY");
-        intentFilter.addAction("com.egeoffrey.IN_FOREGROUND");
-        registerReceiver(new NotificationService(this), intentFilter);
+        // setup notification service
+        notificationService = new NotificationService();
 
         // setup toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -72,10 +69,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void setInForeground(boolean foreground) {
-        // tell the notification service about the new status
-        Intent intent = new Intent("com.egeoffrey.IN_FOREGROUND");
-        intent.putExtra("inForeground", foreground);
-        sendBroadcast(intent);
         // tell the webapp about the change
         browser.evaluateJavascript("javascript: window.EGEOFFREY_IN_FOREGROUND="+foreground, null);
     }
