@@ -4,6 +4,9 @@
         android:id="@+id/getting_started"
         android:title="Getting Started" />
     <item
+        android:id="@+id/reload_gui"
+        android:title="Reload UI" />
+    <item
         android:id="@+id/about"
         android:title="About" />
 </menu>
